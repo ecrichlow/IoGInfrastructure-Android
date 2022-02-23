@@ -62,3 +62,7 @@ Perhaps IoGRetryManager should include a "Cancelled" result. As it stands, if a 
 cancelled, only the party that did the cancellation is aware of it. No other delegates are ever
 notified of anything.
 - Eric C.
+
+A bug was discovered where creating an expiring persistence value and then after that expiration
+adding another expiring item with the same key didn't work. Adding a test to cover this.
+- Eric C.

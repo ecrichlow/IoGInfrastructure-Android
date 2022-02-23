@@ -570,4 +570,45 @@ public class IoGPersistenceManagerTest
 		assertFalse(checkResult);
 	}
 
+	@Test
+	public void testExpiringSaveAndReuseIdentifier()
+	{
+		persistenceSource = IoGPersistenceManager.PersistenceSource.SharedPreferences;
+		String saveString = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestStringValue;
+		Date expirationTime = new Date();
+		Long currentMilliseconds = expirationTime.getTime();
+		expirationTime.setTime(currentMilliseconds + com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestExpiration);
+		boolean saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveString, IoGPersistenceManager.PersistenceDataType.String, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Unsecured, IoGPersistenceManager.PersistenceLifespan.Expiration, expirationTime, true);
+		assertTrue(saveResult);
+		try
+			{
+			Thread.sleep(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestExpirationCheck);
+			}
+		catch(Exception ex)
+			{
+			}
+		boolean checkResult = persistenceManager.checkForValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+		assertFalse(checkResult);
+		saveString = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSecondaryStringValue;
+		currentMilliseconds = expirationTime.getTime();
+		expirationTime.setTime(currentMilliseconds + com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestExpiration);
+		saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveString, IoGPersistenceManager.PersistenceDataType.String, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Unsecured, IoGPersistenceManager.PersistenceLifespan.Expiration, expirationTime, true);
+		assertTrue(saveResult);
+		checkResult = persistenceManager.checkForValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+		assertTrue(checkResult);
+		HashMap<String, Object> readResponse = persistenceManager.readValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+		IoGPersistenceManager.PersistenceReadResultCode readResult = (IoGPersistenceManager.PersistenceReadResultCode) readResponse.get(IoGConfigurationManager.persistenceReadResultCode);
+		String readValue = (String) readResponse.get(IoGConfigurationManager.persistenceReadResultValue);
+		assertEquals(readResult, IoGPersistenceManager.PersistenceReadResultCode.Success);
+		assertEquals(readValue, saveString);
+		try
+			{
+			Thread.sleep(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestExpirationCheck);
+			}
+		catch(Exception ex)
+			{
+			}
+		checkResult = persistenceManager.checkForValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+		assertFalse(checkResult);
+	}
 }

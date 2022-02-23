@@ -451,8 +451,15 @@ public class IoGPersistenceManager
 				{
 				expiringItemEntries.remove(dateToRemove);
 				}
-			String hashMapString = gson.toJson(expiringItemEntries);
-			editor.putString(IoGConfigurationManager.persistenceManagementExpiringItems, hashMapString);
+			if (expiringItemEntries.size() > expiredDates.size())
+				{
+				String hashMapString = gson.toJson(expiringItemEntries);
+				editor.putString(IoGConfigurationManager.persistenceManagementExpiringItems, hashMapString);
+				}
+			else
+				{
+				editor.remove(IoGConfigurationManager.persistenceManagementExpiringItems);
+				}
 			editor.commit();
 			}
 	}
