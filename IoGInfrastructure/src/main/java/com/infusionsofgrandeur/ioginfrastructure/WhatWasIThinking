@@ -66,3 +66,7 @@ notified of anything.
 A bug was discovered where creating an expiring persistence value and then after that expiration
 adding another expiring item with the same key didn't work. Adding a test to cover this.
 - Eric C.
+
+PersistenceManager supports saving all kinds of objects. But we're only supporting secure saving of
+String objects.
+- Eric C.

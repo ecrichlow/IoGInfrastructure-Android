@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo;
 import android.preference.PreferenceManager;
 
 import java.net.URL;
+import java.util.ArrayList;
 
 import com.infusionsofgrandeur.ioginfrastructure.Managers.Persistence.IoGPersistenceManager;
 import com.infusionsofgrandeur.ioginfrastructure.Managers.RemoteData.IoGDataManager.IoGDataManagerType;
@@ -67,7 +68,10 @@ public class IoGConfigurationManager
 	private Context applicationContext;
 	private SharedPreferences prefs;
 	private boolean sessionActive = false;
-	private String currentAPIURL;
+
+// 02-23-22 - EGC - Deprecated single API URL in favor of an array of supported URLs
+//	private String currentAPIURL;
+	ArrayList<String> APIURLs = new ArrayList<>();
 
 	public static IoGConfigurationManager getSharedManager()
 	{
@@ -80,7 +84,8 @@ public class IoGConfigurationManager
 
 	IoGConfigurationManager()
 	{
-		currentAPIURL = "http://";
+// 02-23-22 - EGC - Deprecated single API URL in favor of an array of supported URLs
+//		currentAPIURL = "http://";
 	}
 
 	public void setApplicationContext(Context context)
@@ -133,6 +138,8 @@ public class IoGConfigurationManager
 		return (sessionActive);
 	}
 
+// 02-23-22 - EGC - Deprecated single API URL in favor of an array of supported URLs
+/*
 	public void setAPIURL(String address)
 	{
 		currentAPIURL = address;
@@ -149,6 +156,35 @@ public class IoGConfigurationManager
 			{
 			URL url = new URL(currentAPIURL);
 			return (url);
+			}
+		catch (Exception ex)
+			{
+			return (null);
+			}
+	}
+*/
+
+	public void addAPIURL(String address)
+	{
+		APIURLs.add(address);
+	}
+
+	public ArrayList<String> getAPIURLStrings()
+	{
+		return (APIURLs);
+	}
+
+	public ArrayList<URL> getAPIURLs()
+	{
+		try
+			{
+			ArrayList<URL> urlList = new ArrayList<>();
+			for (String nextURLString : APIURLs)
+				{
+				URL url = new URL(nextURLString);
+				urlList.add(url);
+				}
+			return (urlList);
 			}
 		catch (Exception ex)
 			{
