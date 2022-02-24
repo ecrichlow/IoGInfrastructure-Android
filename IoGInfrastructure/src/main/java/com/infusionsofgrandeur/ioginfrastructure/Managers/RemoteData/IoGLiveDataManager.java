@@ -14,4 +14,13 @@ public class IoGLiveDataManager extends IoGDataManager
 		return requestID++;
 	}
 
+	public int transmitRequest(HttpURLConnection urlConnection, HashMap<String, Object> bodyFields, IoGDataRequestType type, String customTypeIdentifier)
+	{
+		IoGLiveDataRequestResponse requestResponse = new IoGLiveDataRequestResponse(requestID, type, urlConnection, bodyFields, callbackReceiver);
+		requestResponse.setCustomRequestType(customTypeIdentifier);
+		outstandingRequests.put(requestID, requestResponse);
+		requestResponse.processRequest();
+		return requestID++;
+	}
+
 }

@@ -22,6 +22,8 @@ public abstract class IoGDataRequestResponse
 	HashMap<String, Object> responseInfo = new HashMap<String, Object>();
 	byte[] responseData;
 
+	public String customRequestType;
+
 	IoGDataRequestResponse(int reqID, IoGDataRequestType type, HttpURLConnection connection, HashMap<String, Object> bodyFields, IoGDataRequestResponseCallbackReceiver callback)
 	{
 		requestID = reqID;
@@ -69,5 +71,15 @@ public abstract class IoGDataRequestResponse
 	public int getStatusCode()
 	{
 		return (statusCode);
+	}
+
+	public String getCustomRequestType()
+	{
+		return (customRequestType);
+	}
+
+	public void setCustomRequestType(String customType)
+	{
+		customRequestType = customType;
 	}
 }

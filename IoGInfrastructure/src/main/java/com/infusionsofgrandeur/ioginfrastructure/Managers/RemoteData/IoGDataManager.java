@@ -24,14 +24,15 @@ public abstract class IoGDataManager
 
 	public enum IoGDataRequestType
 	{
-		Register((byte)0x00),
-		Login((byte)0x01),
-		Logout((byte)0x02),
-		ResetPassword((byte)0x03),
-		UserInfo((byte)0x04),
-		UpdateUserInfo((byte)0x05),
-		Features((byte)0x06),
-		Version((byte)0x07);
+		Custom((byte)0x00),
+		Register((byte)0x01),
+		Login((byte)0x02),
+		Logout((byte)0x03),
+		ResetPassword((byte)0x04),
+		UserInfo((byte)0x05),
+		UpdateUserInfo((byte)0x06),
+		Features((byte)0x07),
+		Version((byte)0x08);
 
 		private final byte id;
 		IoGDataRequestType(byte id) {this.id = id;}
@@ -95,6 +96,8 @@ public abstract class IoGDataManager
 	}
 
 	abstract public int transmitRequest(HttpURLConnection urlConnection, HashMap<String, Object> bodyFields, IoGDataRequestType type);
+
+	abstract public int transmitRequest(HttpURLConnection urlConnection, HashMap<String, Object> bodyFields, IoGDataRequestType type, String customTypeIdentifier);
 
 	IoGDataRequestResponse.IoGDataRequestResponseCallbackReceiver callbackReceiver = new IoGDataRequestResponse.IoGDataRequestResponseCallbackReceiver()
 	{
