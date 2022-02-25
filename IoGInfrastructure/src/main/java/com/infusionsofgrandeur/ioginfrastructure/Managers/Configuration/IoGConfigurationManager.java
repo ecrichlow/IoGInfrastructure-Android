@@ -63,6 +63,12 @@ public class IoGConfigurationManager
 	public static final String retryItemFieldRoutine = "Routine";
 	public static final String retryItemFieldIdentifier = "Identifier";
 
+	// Encryption
+	public static final String ALGORITHM_AES = "AES";
+	public static final int AES_KEY_SIZE = 256;
+	public static final String symmetricKeyIdentifier = "com.iog.symmetrickey";
+	public static final String aesEncryptionParameters = "AES/CBC/PKCS5Padding";
+
 	private static IoGConfigurationManager singletonInstance = null;
 
 	private Context applicationContext;

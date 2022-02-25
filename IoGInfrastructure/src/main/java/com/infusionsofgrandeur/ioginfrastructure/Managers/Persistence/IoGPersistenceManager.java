@@ -17,11 +17,14 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.crypto.SecretKey;
+
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 
 import com.infusionsofgrandeur.ioginfrastructure.Managers.Configuration.IoGConfigurationManager;
+import com.infusionsofgrandeur.ioginfrastructure.Managers.Encryption.EncryptionKeyManager;
 
 public class IoGPersistenceManager
 {
@@ -61,7 +64,8 @@ public class IoGPersistenceManager
 		Success,
 		NotFound,
 		NoContext,
-		Expired
+		Expired,
+		ProtectionError
 	}
 
 	private static IoGPersistenceManager singletonInstance = null;
@@ -84,6 +88,11 @@ public class IoGPersistenceManager
 
 	public boolean saveValue(String name, Object value, PersistenceDataType type, PersistenceSource destination, PersistenceProtectionLevel protection, PersistenceLifespan lifespan, Date expiration, boolean overwrite)
 	{
+		return (saveValue(name, value, type, destination, protection, lifespan, expiration, overwrite, null));
+	}
+
+	public boolean saveValue(String name, Object value, PersistenceDataType type, PersistenceSource destination, PersistenceProtectionLevel protection, PersistenceLifespan lifespan, Date expiration, boolean overwrite, SecretKey key)
+	{
 		Context context = IoGConfigurationManager.getSharedManager().getApplicationContext();
 		if (context == null)
 			{
@@ -91,7 +100,46 @@ public class IoGPersistenceManager
 			}
 		SharedPreferences prefs = IoGConfigurationManager.getSharedManager().getSharedPreferences();
 		HashMap<String, Object> savedDataElement = new HashMap<>();
-		savedDataElement.put(IoGConfigurationManager.persistenceElementValue, value);
+// 02-24-22 - EGC - Added support for encryption
+		if (protection == PersistenceProtectionLevel.Secured)
+			{
+			if (value instanceof String)
+				{
+				String stringToEncrypt = (String)value;
+				if (key != null)
+					{
+					String encryptedEncodedString = EncryptionKeyManager.getSharedManager().encryptAndEncodeString(stringToEncrypt, key);
+					if (encryptedEncodedString != null)
+						{
+						savedDataElement.put(IoGConfigurationManager.persistenceElementValue, encryptedEncodedString);
+						}
+					else
+						{
+						return (false);
+						}
+					}
+				else
+					{
+					String encryptedEncodedString = EncryptionKeyManager.getSharedManager().encryptAndEncodeString(stringToEncrypt);
+					if (encryptedEncodedString != null)
+						{
+						savedDataElement.put(IoGConfigurationManager.persistenceElementValue, encryptedEncodedString);
+						}
+					else
+						{
+						return (false);
+						}
+					}
+				}
+			else
+				{
+				return (false);
+				}
+			}
+		else
+			{
+			savedDataElement.put(IoGConfigurationManager.persistenceElementValue, value);
+			}
 		savedDataElement.put(IoGConfigurationManager.persistenceElementType, type);
 		savedDataElement.put(IoGConfigurationManager.persistenceElementSource, destination);
 		savedDataElement.put(IoGConfigurationManager.persistenceElementProtection, protection);
@@ -236,6 +284,11 @@ public class IoGPersistenceManager
 
 	public HashMap<String, Object> readValue(String name, PersistenceSource from)
 	{
+		return (readValue(name, from, null));
+	}
+
+	public HashMap<String, Object> readValue(String name, PersistenceSource from, SecretKey key)
+	{
 		Context context = IoGConfigurationManager.getSharedManager().getApplicationContext();
 		HashMap<String, Object> returnValue = new HashMap<String, Object>();
 		if (from == PersistenceSource.Memory)
@@ -243,8 +296,52 @@ public class IoGPersistenceManager
 			if (memoryStore.containsKey(name))
 				{
 				HashMap<String, Object> itemEntry = memoryStore.get(name);
-				returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
-				returnValue.put(IoGConfigurationManager.persistenceReadResultValue, itemEntry.get(IoGConfigurationManager.persistenceElementValue));
+				PersistenceProtectionLevel protection = (PersistenceProtectionLevel)itemEntry.get(IoGConfigurationManager.persistenceElementProtection);
+				if (protection == PersistenceProtectionLevel.Secured)
+					{
+					if (itemEntry.get(IoGConfigurationManager.persistenceElementValue) instanceof String)
+						{
+						String encodedString = (String)itemEntry.get(IoGConfigurationManager.persistenceElementValue);
+						if (key != null)
+							{
+							String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString, key);
+							if (decodedString != null)
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+								}
+							else
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, itemEntry.get(IoGConfigurationManager.persistenceElementValue));
+								}
+							}
+						else
+							{
+							String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString);
+							if (decodedString != null)
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+								}
+							else
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, itemEntry.get(IoGConfigurationManager.persistenceElementValue));
+								}
+							}
+						}
+					else
+						{
+						returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+						returnValue.put(IoGConfigurationManager.persistenceReadResultValue, itemEntry.get(IoGConfigurationManager.persistenceElementValue));
+						}
+					}
+				else
+					{
+					returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+					returnValue.put(IoGConfigurationManager.persistenceReadResultValue, itemEntry.get(IoGConfigurationManager.persistenceElementValue));
+					}
 				}
 			else
 				{
@@ -267,8 +364,52 @@ public class IoGPersistenceManager
 				String hashMapString = prefs.getString(name, null);
 				Type hashmapType = new TypeToken<HashMap<String, String>>() {}.getType();
 				HashMap<String, Object> entry = gson.fromJson(hashMapString, HashMap.class);
-				returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
-				returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+				PersistenceProtectionLevel protection = (PersistenceProtectionLevel)entry.get(IoGConfigurationManager.persistenceElementProtection);
+				if (protection == PersistenceProtectionLevel.Secured)
+					{
+					if (entry.get(IoGConfigurationManager.persistenceElementValue) instanceof String)
+						{
+						String encodedString = (String)entry.get(IoGConfigurationManager.persistenceElementValue);
+						if (key != null)
+							{
+							String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString, key);
+							if (decodedString != null)
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+								}
+							else
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+								}
+							}
+						else
+							{
+							String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString);
+							if (decodedString != null)
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+								}
+							else
+								{
+								returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+								returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+								}
+							}
+						}
+					else
+						{
+						returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+						returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+						}
+					}
+				else
+					{
+					returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+					returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+					}
 				}
 			else
 				{
@@ -298,8 +439,52 @@ public class IoGPersistenceManager
 					inputStream.read(fileBytes);
 					String hashMapString = new String(fileBytes);
 					HashMap<String, Object> entry = gson.fromJson(hashMapString, HashMap.class);
-					returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
-					returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+					PersistenceProtectionLevel protection = (PersistenceProtectionLevel)entry.get(IoGConfigurationManager.persistenceElementProtection);
+					if (protection == PersistenceProtectionLevel.Secured)
+						{
+						if (entry.get(IoGConfigurationManager.persistenceElementValue) instanceof String)
+							{
+							String encodedString = (String)entry.get(IoGConfigurationManager.persistenceElementValue);
+							if (key != null)
+								{
+								String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString, key);
+								if (decodedString != null)
+									{
+									returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+									returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+									}
+								else
+									{
+									returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+									returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+									}
+								}
+							else
+								{
+								String decodedString = EncryptionKeyManager.getSharedManager().decodeAndDecryptString(encodedString);
+								if (decodedString != null)
+									{
+									returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+									returnValue.put(IoGConfigurationManager.persistenceReadResultValue, decodedString);
+									}
+								else
+									{
+									returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+									returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+									}
+								}
+							}
+						else
+							{
+							returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.ProtectionError);
+							returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+							}
+						}
+					else
+						{
+						returnValue.put(IoGConfigurationManager.persistenceReadResultCode, PersistenceReadResultCode.Success);
+						returnValue.put(IoGConfigurationManager.persistenceReadResultValue, entry.get(IoGConfigurationManager.persistenceElementValue));
+						}
 					inputStream.close();
 					}
 				catch (Exception ex)
