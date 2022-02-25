@@ -333,6 +333,86 @@ public class IoGDataManagerTest
             }
     }
 
+    @Test
+    public void testSuccessfulCustomDataTypeRetrieval()
+    {
+        try
+            {
+            URL mockURL = new URL(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.successURL1);
+            HttpURLConnection connection = new HttpURLConnection(mockURL)
+            {
+                @Override
+                public void disconnect()
+                {
+                }
+
+                @Override
+                public boolean usingProxy()
+                {
+                    return false;
+                }
+
+                @Override
+                public void connect() throws IOException
+                {
+                }
+            };
+            IoGDataManager.dataManagerOfType(IoGDataManager.IoGDataManagerType.IoGDataManagerTypeMock).transmitRequest(connection, null, IoGDataManager.IoGDataRequestType.Custom, com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.dataRequestCustomType);
+            Thread.sleep(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.dataRequestFastResponseCheck);
+            String customType = callbackResponse.getCustomRequestType();
+            assertTrue(callbackInvoked);
+            assertNotNull(callbackResponse);
+            assertNotNull(returnedData);
+            assertEquals(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.dataRequestCustomType, customType);
+            String returnedString = new String(returnedData);
+            assertEquals(returnedString, IoGConfigurationManager.mockDataResponse1);
+            }
+        catch (Exception ex)
+            {
+            Assert.fail();
+            }
+    }
+
+    @Test
+    public void testFailedCustomDataTypeRetrieval()
+    {
+        try
+            {
+            URL mockURL = new URL(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.successURL1);
+            HttpURLConnection connection = new HttpURLConnection(mockURL)
+            {
+                @Override
+                public void disconnect()
+                {
+                }
+
+                @Override
+                public boolean usingProxy()
+                {
+                    return false;
+                }
+
+                @Override
+                public void connect() throws IOException
+                {
+                }
+            };
+            IoGDataManager.dataManagerOfType(IoGDataManager.IoGDataManagerType.IoGDataManagerTypeMock).transmitRequest(connection, null, IoGDataManager.IoGDataRequestType.Custom);
+            Thread.sleep(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.dataRequestFastResponseCheck);
+            String customType = callbackResponse.getCustomRequestType();
+            assertTrue(callbackInvoked);
+            assertNotNull(callbackResponse);
+            assertNotNull(returnedData);
+            assertNotEquals(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.dataRequestCustomType, customType);
+            String returnedString = new String(returnedData);
+            assertEquals(returnedString, IoGConfigurationManager.mockDataResponse1);
+            }
+        catch (Exception ex)
+            {
+            Assert.fail();
+            }
+    }
+
     IoGDataManager.IoGDataManagerCallbackReceiver callbackReceiver = new IoGDataManager.IoGDataManagerCallbackReceiver()
     {
         public void dataRequestResponseReceived(int requestID, IoGDataManager.IoGDataRequestType requestType, byte[] responseData, String error, IoGDataRequestResponse response)

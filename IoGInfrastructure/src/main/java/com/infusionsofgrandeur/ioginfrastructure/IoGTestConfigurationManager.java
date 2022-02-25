@@ -44,6 +44,7 @@ public class IoGTestConfigurationManager
 	static public int dataRequestFastResponseCheck = 500;
 	static public int dataRequestSlowResponseCheck = 7 * 1000;
 	static public int dataTestExpirationCheckTimeout = 10 * 1000;
+	static public String dataRequestCustomType = "CustomTypeTestX";
 
 	// Data Parsing
 	static public String parsingObjectData = "{\"model\":\"TRS-80 Color Computer 2\", \"processor\":\"6809\", \"year\":\"1980\"}";

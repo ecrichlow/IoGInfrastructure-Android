@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.junit.Rule;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -610,5 +614,78 @@ public class IoGPersistenceManagerTest
 			}
 		checkResult = persistenceManager.checkForValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
 		assertFalse(checkResult);
+	}
+
+	@Test
+	public void testSecureSaveFail()
+	{
+		persistenceSource = IoGPersistenceManager.PersistenceSource.Memory;
+		Integer saveNumber = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestNumericValue;
+		boolean saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveNumber, IoGPersistenceManager.PersistenceDataType.Number, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Secured, IoGPersistenceManager.PersistenceLifespan.Session, null, true);
+		assertFalse(saveResult);
+	}
+
+	@Test
+	public void testSecureSaveSucceed()
+	{
+		persistenceSource = IoGPersistenceManager.PersistenceSource.SharedPreferences;
+		String saveString = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestStringValue;
+		boolean saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveString, IoGPersistenceManager.PersistenceDataType.String, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Secured, IoGPersistenceManager.PersistenceLifespan.Session, null, true);
+		assertTrue(saveResult);
+		HashMap<String, Object> readResponse = persistenceManager.readValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+		IoGPersistenceManager.PersistenceReadResultCode readResult = (IoGPersistenceManager.PersistenceReadResultCode) readResponse.get(IoGConfigurationManager.persistenceReadResultCode);
+		String readValue = (String) readResponse.get(IoGConfigurationManager.persistenceReadResultValue);
+		assertEquals(readResult, IoGPersistenceManager.PersistenceReadResultCode.Success);
+		assertEquals(readValue, saveString);
+	}
+
+	@Test
+	public void testSecureSaveWithCustomKeyFail()
+	{
+		try
+			{
+			SecureRandom secureRandom = new SecureRandom();
+			KeyGenerator keyGenerator = KeyGenerator.getInstance(IoGConfigurationManager.ALGORITHM_AES);
+			keyGenerator.init(IoGConfigurationManager.AES_KEY_SIZE, secureRandom);
+			SecretKey key = keyGenerator.generateKey();
+			persistenceSource = IoGPersistenceManager.PersistenceSource.SharedPreferences;
+			String saveString = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestStringValue;
+			boolean saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveString, IoGPersistenceManager.PersistenceDataType.String, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Secured, IoGPersistenceManager.PersistenceLifespan.Session, null, true, key);
+			assertTrue(saveResult);
+			HashMap<String, Object> readResponse = persistenceManager.readValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource);
+			IoGPersistenceManager.PersistenceReadResultCode readResult = (IoGPersistenceManager.PersistenceReadResultCode) readResponse.get(IoGConfigurationManager.persistenceReadResultCode);
+			String readValue = (String) readResponse.get(IoGConfigurationManager.persistenceReadResultValue);
+			assertEquals(readResult, IoGPersistenceManager.PersistenceReadResultCode.ProtectionError);
+			assertNotEquals(readValue, saveString);
+			}
+		catch (Exception ex)
+			{
+			Assert.fail("Encryption exception");
+			}
+	}
+
+	@Test
+	public void testSecureSaveWithCustomKeySucceed()
+	{
+		try
+			{
+			SecureRandom secureRandom = new SecureRandom();
+			KeyGenerator keyGenerator = KeyGenerator.getInstance(IoGConfigurationManager.ALGORITHM_AES);
+			keyGenerator.init(IoGConfigurationManager.AES_KEY_SIZE, secureRandom);
+			SecretKey key = keyGenerator.generateKey();
+			persistenceSource = IoGPersistenceManager.PersistenceSource.SharedPreferences;
+			String saveString = com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestStringValue;
+			boolean saveResult = persistenceManager.saveValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, saveString, IoGPersistenceManager.PersistenceDataType.String, persistenceSource, IoGPersistenceManager.PersistenceProtectionLevel.Secured, IoGPersistenceManager.PersistenceLifespan.Session, null, true, key);
+			assertTrue(saveResult);
+			HashMap<String, Object> readResponse = persistenceManager.readValue(com.infusionsofgrandeur.ioginfrastructure.IoGTestConfigurationManager.persistenceTestSaveName, persistenceSource, key);
+			IoGPersistenceManager.PersistenceReadResultCode readResult = (IoGPersistenceManager.PersistenceReadResultCode) readResponse.get(IoGConfigurationManager.persistenceReadResultCode);
+			String readValue = (String) readResponse.get(IoGConfigurationManager.persistenceReadResultValue);
+			assertEquals(readResult, IoGPersistenceManager.PersistenceReadResultCode.Success);
+			assertEquals(readValue, saveString);
+			}
+		catch (Exception ex)
+			{
+			Assert.fail("Encryption exception");
+			}
 	}
 }
