@@ -1,13 +1,11 @@
 package com.infusionsofgrandeur.ioginfrastructure.Managers.Encryption;
 
-import android.os.Build;
-import android.support.annotation.RequiresApi;
-
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.util.Base64;
@@ -92,7 +90,8 @@ public class EncryptionKeyManager
 		try
 			{
 			Cipher cipher = Cipher.getInstance(IoGConfigurationManager.aesEncryptionParameters);
-			cipher.init(Cipher.ENCRYPT_MODE, EncryptionKeyManager.getKey());
+			IvParameterSpec iv = new IvParameterSpec(IoGConfigurationManager.aesEncryptionIV.getBytes(StandardCharsets.UTF_8));
+			cipher.init(Cipher.ENCRYPT_MODE, EncryptionKeyManager.getKey(), iv);
 			byte[] encryptedData = cipher.doFinal(string.getBytes(StandardCharsets.UTF_8));
 			String encodedEncryptedData = Base64.getEncoder().encodeToString(encryptedData);
 			return (encodedEncryptedData);
@@ -108,7 +107,8 @@ public class EncryptionKeyManager
 		try
 			{
 			Cipher cipher = Cipher.getInstance(IoGConfigurationManager.aesEncryptionParameters);
-			cipher.init(Cipher.ENCRYPT_MODE, key);
+			IvParameterSpec iv = new IvParameterSpec(IoGConfigurationManager.aesEncryptionIV.getBytes(StandardCharsets.UTF_8));
+			cipher.init(Cipher.ENCRYPT_MODE, key, iv);
 			byte[] encryptedData = cipher.doFinal(string.getBytes(StandardCharsets.UTF_8));
 			String encodedEncryptedData = Base64.getEncoder().encodeToString(encryptedData);
 			return (encodedEncryptedData);
@@ -124,7 +124,8 @@ public class EncryptionKeyManager
 		try
 			{
 			Cipher cipher = Cipher.getInstance(IoGConfigurationManager.aesEncryptionParameters);
-			cipher.init(Cipher.DECRYPT_MODE, EncryptionKeyManager.getKey());
+			IvParameterSpec iv = new IvParameterSpec(IoGConfigurationManager.aesEncryptionIV.getBytes(StandardCharsets.UTF_8));
+			cipher.init(Cipher.DECRYPT_MODE, EncryptionKeyManager.getKey(), iv);
 			byte[] encryptedData = Base64.getDecoder().decode(encodedString);
 			byte[] decryptedStringData = cipher.doFinal(encryptedData);
 			String decryptedString = new String(decryptedStringData);
@@ -141,7 +142,8 @@ public class EncryptionKeyManager
 		try
 			{
 			Cipher cipher = Cipher.getInstance(IoGConfigurationManager.aesEncryptionParameters);
-			cipher.init(Cipher.DECRYPT_MODE, key);
+			IvParameterSpec iv = new IvParameterSpec(IoGConfigurationManager.aesEncryptionIV.getBytes(StandardCharsets.UTF_8));
+			cipher.init(Cipher.DECRYPT_MODE, key, iv);
 			byte[] encryptedData = Base64.getDecoder().decode(encodedString);
 			byte[] decryptedStringData = cipher.doFinal(encryptedData);
 			String decryptedString = new String(decryptedStringData);

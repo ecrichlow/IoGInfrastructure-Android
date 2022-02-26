@@ -364,7 +364,8 @@ public class IoGPersistenceManager
 				String hashMapString = prefs.getString(name, null);
 				Type hashmapType = new TypeToken<HashMap<String, String>>() {}.getType();
 				HashMap<String, Object> entry = gson.fromJson(hashMapString, HashMap.class);
-				PersistenceProtectionLevel protection = (PersistenceProtectionLevel)entry.get(IoGConfigurationManager.persistenceElementProtection);
+				String protectionLevelString = (String)entry.get(IoGConfigurationManager.persistenceElementProtection);
+				PersistenceProtectionLevel protection = (protectionLevelString.equalsIgnoreCase("Secured")) ? PersistenceProtectionLevel.Secured : PersistenceProtectionLevel.Unsecured;
 				if (protection == PersistenceProtectionLevel.Secured)
 					{
 					if (entry.get(IoGConfigurationManager.persistenceElementValue) instanceof String)
@@ -439,7 +440,8 @@ public class IoGPersistenceManager
 					inputStream.read(fileBytes);
 					String hashMapString = new String(fileBytes);
 					HashMap<String, Object> entry = gson.fromJson(hashMapString, HashMap.class);
-					PersistenceProtectionLevel protection = (PersistenceProtectionLevel)entry.get(IoGConfigurationManager.persistenceElementProtection);
+					String protectionLevelString = (String)entry.get(IoGConfigurationManager.persistenceElementProtection);
+					PersistenceProtectionLevel protection = (protectionLevelString.equalsIgnoreCase("Secured")) ? PersistenceProtectionLevel.Secured : PersistenceProtectionLevel.Unsecured;
 					if (protection == PersistenceProtectionLevel.Secured)
 						{
 						if (entry.get(IoGConfigurationManager.persistenceElementValue) instanceof String)

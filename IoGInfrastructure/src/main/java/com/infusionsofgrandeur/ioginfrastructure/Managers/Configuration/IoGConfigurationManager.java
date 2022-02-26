@@ -65,9 +65,10 @@ public class IoGConfigurationManager
 
 	// Encryption
 	public static final String ALGORITHM_AES = "AES";
-	public static final int AES_KEY_SIZE = 256;
+	public static final int AES_KEY_SIZE = 128;
 	public static final String symmetricKeyIdentifier = "com.iog.symmetrickey";
 	public static final String aesEncryptionParameters = "AES/CBC/PKCS5Padding";
+	public static final String aesEncryptionIV = "InfusionsOfGrand";
 
 	private static IoGConfigurationManager singletonInstance = null;
 
