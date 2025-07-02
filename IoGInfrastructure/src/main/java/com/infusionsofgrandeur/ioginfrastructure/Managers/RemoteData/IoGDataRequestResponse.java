@@ -2,6 +2,8 @@ package com.infusionsofgrandeur.ioginfrastructure.Managers.RemoteData;
 
 import java.util.HashMap;
 import java.net.HttpURLConnection;
+import java.util.List;
+import java.util.Map;
 
 import com.infusionsofgrandeur.ioginfrastructure.Managers.Configuration.IoGConfigurationManager;
 import com.infusionsofgrandeur.ioginfrastructure.Managers.RemoteData.IoGDataManager.IoGDataRequestType;
@@ -21,6 +23,7 @@ public abstract class IoGDataRequestResponse
 	int statusCode;
 	HashMap<String, Object> responseInfo = new HashMap<String, Object>();
 	byte[] responseData;
+	HttpURLConnection conn;
 
 	public String customRequestType;
 
@@ -28,6 +31,7 @@ public abstract class IoGDataRequestResponse
 	{
 		requestID = reqID;
 		retryNumber = 0;
+		conn = connection;
 		callbackInfo.put(IoGConfigurationManager.requestResponseKeyCallback, callback);
 		requestInfo.put(IoGConfigurationManager.requestResponseKeyRequest, connection);
 		requestInfo.put(IoGConfigurationManager.requestResponseKeyRequestType, type);
@@ -81,5 +85,12 @@ public abstract class IoGDataRequestResponse
 	public void setCustomRequestType(String customType)
 	{
 		customRequestType = customType;
+	}
+
+	public List<String> getCookies()
+	{
+		Map<String, List<String>> headerFields = conn.getHeaderFields();
+		List<String> cookies = headerFields.get("Set-Cookie");
+		return cookies;
 	}
 }
